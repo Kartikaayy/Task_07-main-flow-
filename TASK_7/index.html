@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Bill Generator</title>
+    <style>
+        :root{
+            --bg:#0b0c10;
+            --glass:rgba(255,255,255,0.08);
+            --text:#f7f8fb;
+            --muted:#9aa1ad;
+            --acc:#7c5cff;
+            --acc2:#12c2e9;
+            --border:rgba(255,255,255,0.15);
+            --radius:18px;
+        }
+        .light{
+            --bg:#f5f6f9;
+            --glass:rgba(255,255,255,0.65);
+            --text:#0f172a;
+            --muted:#606470;
+            --border:rgba(0,0,0,0.08);
+        }
+        *{box-sizing:border-box}
+        body{
+            margin:0;
+            font-family:"Poppins",system-ui,sans-serif;
+            background:linear-gradient(135deg,var(--bg),#000) no-repeat center center fixed;
+            color:var(--text);
+            transition:background .3s,color .3s;
+        }
+        .container{max-width:1120px;margin:30px auto;padding:0 18px 60px}
+        header{
+            display:flex;justify-content:space-between;align-items:center;
+            padding:20px;margin-bottom:20px;
+            background:var(--glass);backdrop-filter:blur(18px);
+            border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.4);
+        }
+        header h1{margin:0;font-size:1.5rem;
+            background:linear-gradient(135deg,var(--acc),var(--acc2));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+        }
+        button{
+            padding:10px 16px;border:none;border-radius:var(--radius);
+            background:linear-gradient(135deg,var(--acc),var(--acc2));
+            color:#fff;font-weight:600;cursor:pointer;
+            transition:all .25s ease;box-shadow:0 6px 20px rgba(0,0,0,.35);
+        }
+        button:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 10px 28px rgba(0,0,0,.5)}
+        .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+        .card{
+            background:var(--glass);backdrop-filter:blur(14px);
+            border:1px solid var(--border);border-radius:var(--radius);
+            margin:18px 0;box-shadow:0 8px 26px rgba(0,0,0,.4);
+            overflow:hidden;transition:transform .25s ease;
+        }
+        .card:hover{transform:translateY(-3px)}
+        .card h3{margin:0;padding:14px 18px;border-bottom:1px solid var(--border)}
+        .card .content{padding:18px}
+        input,select{
+            width:100%;padding:10px;border-radius:12px;
+            border:1px solid var(--border);background:rgba(255,255,255,0.05);
+            color:var(--text);transition:.2s;
+        }
+        input:focus,select:focus{border-color:var(--acc2);box-shadow:0 0 8px var(--acc2)}
+        label{font-size:.85rem;color:var(--muted);display:block;margin:6px 0}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        th,td{padding:12px;border-bottom:1px dashed var(--border)}
+        thead th{color:var(--muted);font-size:.85rem}
+        tbody tr{transition:.2s}
+        tbody tr:hover{background:rgba(124,92,255,0.08)}
+        .right{text-align:right}
+        .preview-wrap{
+            background:#fff;color:#111;border-radius:var(--radius);
+            box-shadow:0 14px 40px rgba(0,0,0,.5);overflow:hidden;
+        }
+        .bill{padding:24px;font-family:system-ui}
+        .bill h2{margin:0;font-size:1.3rem}
+        .bill .badge{background:#eef2ff;color:#3730a3;
+            font-weight:700;padding:6px 10px;border-radius:10px}
+        .saved-list{max-height:250px;overflow:auto}
+        .saved-item{padding:10px;border-bottom:1px solid var(--border);
+            display:flex;justify-content:space-between}
+        /* custom scrollbar */
+        ::-webkit-scrollbar{width:8px}
+        ::-webkit-scrollbar-thumb{background:var(--acc);border-radius:4px}
+        ::-webkit-scrollbar-track{background:transparent}
+        @media print{.no-print{display:none}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="no-print">
+        <h1>Bill Generator</h1>
+        <button id="themeToggle" class="btn-ghost"> Theme</button>
+    </header>
+
+    <section class="card">
+        <h3>Buyer & Company</h3>
+        <div class="content">
+            <label>Company Name</label><input id="companyName">
+            <label>Buyer Name</label><input id="buyerName">
+            <label>Email</label><input id="buyerEmail" type="email">
+            <label>Purchase Date</label><input id="purchaseDate" type="date">
+        </div>
+    </section>
+
+    <section class="card">
+        <h3>Products</h3>
+        <div class="content">
+            <button id="addRow">+ Add Item</button>
+            <table>
+                <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th><th></th></tr></thead>
+                <tbody id="items"></tbody>
+            </table>
+            <div style="text-align:right;margin-top:12px">
+                <div>Subtotal: <span id="subtotal">0</span></div>
+                <div><b>Final Total: <span id="finalTotal">0</span></b></div>
+            </div>
+            <div class="no-print" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+                <button id="previewBtn"> Preview</button>
+                <button id="printBtn">🖨 Print</button>
+                <button id="saveBtn"> Save</button>
+                <button id="csvBtn" class="btn-ghost">⬇ CSV</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h3>Preview</h3>
+        <div class="content preview-wrap">
+            <div id="billPreview" class="bill">
+                <div style="display:flex;justify-content:space-between">
+                    <h2 id="pvCompany">Your Company</h2>
+                    <div class="badge" id="pvTxnId">TXN-—</div>
+                </div>
+                <p><b>Buyer:</b> <span id="pvBuyer">—</span> | <span id="pvBuyerEmail">—</span></p>
+                <table id="pvTable">
+                    <thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+                    <tbody></tbody>
+                    <tfoot>
+                    <tr><td colspan="3">Subtotal</td><td id="pvSubtotal">0</td></tr>
+                    <tr><td colspan="3"><b>Final</b></td><td id="pvFinal">0</td></tr>
+                    </tfoot>
+                </table>
+                <p>Date: <span id="pvDate">—</span></p>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h3>Saved Bills</h3>
+        <div class="content">
+            <input id="searchBox" placeholder="Search...">
+            <div id="savedList" class="saved-list"></div>
+        </div>
+    </section>
+</div>
+
+<script>
+    const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+    let state={items:[],subtotal:0,finalTotal:0,currentTxnId:null};
+    function uid(){return 'TXN-'+Date.now().toString(36).toUpperCase();}
+    function format(n){return '₹'+Number(n).toFixed(2);}
+    function addRow(data={name:'',qty:1,price:0}){
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td><input class="pname" value="${data.name}"></td>
+    <td><input type="number" class="pqty" value="${data.qty}" min=1></td>
+    <td><input type="number" class="pprice" value="${data.price}" min=0></td>
+    <td class="ptotal">0</td>
+    <td><button class="btn-ghost">✖</button></td>`;
+        $('#items').appendChild(tr);
+        tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',recalc));
+        tr.querySelector('button').onclick=()=>{tr.remove();recalc();};
+        recalc();
+    }
+    function recalc(){
+        let sub=0;
+        $$('#items tr').forEach(tr=>{
+            let q=+tr.querySelector('.pqty').value,p=+tr.querySelector('.pprice').value;
+            let t=q*p; sub+=t; tr.querySelector('.ptotal').textContent=format(t);
+        });
+        state.subtotal=sub; state.finalTotal=sub;
+        $('#subtotal').textContent=format(sub);
+        $('#finalTotal').textContent=format(sub);
+        updatePreview();
+    }
+    function updatePreview(){
+        $('#pvCompany').textContent=$('#companyName').value||'Your Company';
+        $('#pvBuyer').textContent=$('#buyerName').value||'—';
+        $('#pvBuyerEmail').textContent=$('#buyerEmail').value||'—';
+        $('#pvDate').textContent=$('#purchaseDate').value||new Date().toISOString().slice(0,10);
+        if(!state.currentTxnId) state.currentTxnId=uid();
+        $('#pvTxnId').textContent=state.currentTxnId;
+        const tb=$('#pvTable tbody');tb.innerHTML='';
+        state.items=$$('#items tr').map(tr=>({
+            name:tr.querySelector('.pname').value,qty:+tr.querySelector('.pqty').value,price:+tr.querySelector('.pprice').value
+        }));
+        state.items.forEach(i=>{
+            let r=document.createElement('tr');
+            r.innerHTML=`<td>${i.name}</td><td>${i.qty}</td><td>${format(i.price)}</td><td>${format(i.qty*i.price)}</td>`;
+            tb.appendChild(r);
+        });
+        $('#pvSubtotal').textContent=format(state.subtotal);
+        $('#pvFinal').textContent=format(state.finalTotal);
+    }
+    function printBill(){if(!state.items.length)return alert('No items');updatePreview();window.print();}
+    function saveBill(){
+        if(!state.items.length)return alert('No items');updatePreview();
+        let bill={id:state.currentTxnId,...state,buyer:$('#buyerName').value,date:$('#purchaseDate').value};
+        let all=JSON.parse(localStorage.getItem('bills')||'[]');
+        all.unshift(bill);localStorage.setItem('bills',JSON.stringify(all));renderSaved();
+    }
+    function renderSaved(){
+        let q=$('#searchBox').value.toLowerCase();
+        let all=JSON.parse(localStorage.getItem('bills')||'[]');
+        let f=all.filter(b=>!q||b.id.toLowerCase().includes(q)||b.buyer.toLowerCase().includes(q));
+        let root=$('#savedList');root.innerHTML='';
+        f.forEach(b=>{
+            let d=document.createElement('div');d.className='saved-item';
+            d.innerHTML=`<span><b>${b.id}</b> • ${b.buyer} • ${format(b.finalTotal)}</span>
+      <button class="btn-ghost">Load</button>`;
+            d.querySelector('button').onclick=()=>loadBill(b);
+            root.appendChild(d);
+        });
+    }
+    function loadBill(b){
+        $('#companyName').value=b.company||'';$('#buyerName').value=b.buyer||'';
+        $('#buyerEmail').value=b.buyerEmail||'';$('#purchaseDate').value=b.date||'';
+        $('#items').innerHTML='';(b.items||[]).forEach(addRow);
+        state.currentTxnId=b.id;recalc();updatePreview();
+    }
+    $('#addRow').onclick=()=>addRow();
+    $('#previewBtn').onclick=updatePreview;
+    $('#printBtn').onclick=printBill;
+    $('#saveBtn').onclick=saveBill;
+    $('#csvBtn').onclick=()=>{
+        if(!state.items.length)return alert('No data');
+        let rows=[['Name','Qty','Price','Total'],...state.items.map(i=>[i.name,i.qty,i.price,i.qty*i.price])];
+        let csv=rows.map(r=>r.join(',')).join('\\n');
+        let a=document.createElement('a');a.href='data:text/csv,'+encodeURIComponent(csv);a.download='bill.csv';a.click();
+    };
+    $('#searchBox').oninput=renderSaved;
+    $('#themeToggle').onclick=()=>document.body.classList.toggle('light');
+    addRow();renderSaved();
+</script>
+</body>
+</html>
+
+
