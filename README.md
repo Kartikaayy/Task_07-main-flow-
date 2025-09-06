@@ -34,7 +34,7 @@ This project allows users to generate bills dynamically, calculate totals, and d
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/bill-generator.git
+   git clone (https://github.com/Kartikaayy/Task_07-main-flow-.git)
    ```
 
 2. Navigate to the project directory:
